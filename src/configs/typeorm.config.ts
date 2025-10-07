@@ -12,8 +12,7 @@ export function TypeOrmConfig(): TypeOrmModuleOptions {
     username: DB_USERNAME,
     password: DB_PASSWORD,
     database: DB_NAME,
-    synchronize: false,
-    migrationsRun: true, //! Only in development env
+    synchronize: false, //! Only in development env
     autoLoadEntities: false,
     entities: [UserEntity, TaskEntity, ProfileEntity], 
   };
