@@ -16,6 +16,8 @@ export class TaskService {
 
   async create(createTaskDto: CreateTaskDto) {
     const { caption, title, link } = createTaskDto;
+    await this.checkExistByTitle(title);
+
     const task = this.taskRepository.create({
       title,
       caption,
@@ -24,7 +26,7 @@ export class TaskService {
     await this.taskRepository.save(task);
 
     return {
-      messsage: PublicMessage.Created
+      message: PublicMessage.Created
     };
   }
 
@@ -61,9 +63,10 @@ async update(id: number, updateTaskDto: UpdateTaskDto, userId: number) {
   const task = await this.taskRepository.findOneBy({ id, userId });
   if (!task) throw new NotFoundException(NotFoundMessage.NotFoundTask);
 
-  const { caption, title } = updateTaskDto;
+  const { caption, title, link } = updateTaskDto;
   if (title) task.title = title;
   if (caption) task.caption = caption;
+  if (link) task.link = link;
 
   await this.taskRepository.save(task);
   return { message: PublicMessage.Updated };
@@ -73,7 +76,7 @@ async remove(id: number, userId: number) {
   const task = await this.taskRepository.findOneBy({ id, userId });
   if (!task) throw new NotFoundException(NotFoundMessage.NotFoundTask);
 
-  await this.taskRepository.delete({ id });
+  await this.taskRepository.delete(task);
   return { message: PublicMessage.Deleted };
 }
 

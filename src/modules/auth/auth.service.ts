@@ -52,7 +52,7 @@ export class AuthService {
 
     const accessToken = this.tokenService.createAccessToken({ userId: user.id });
 
-    res.cookie(CookieKeys.OTP, accessToken, {
+    res.cookie(CookieKeys.ACCESS, accessToken, {
       httpOnly: true,
       expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
     });
@@ -83,7 +83,7 @@ export class AuthService {
 
     const accessToken = this.tokenService.createAccessToken({ userId: user.id });
 
-    res.cookie(CookieKeys.OTP, accessToken, {
+    res.cookie(CookieKeys.ACCESS, accessToken, {
       httpOnly: true,
       expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
     });

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFile, ParseIntPipe, Res, Put, UseGuards, Query, Req, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, UseInterceptors, UploadedFile, ParseIntPipe, Res, Put, UseGuards, Query, Req, BadRequestException } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -11,13 +11,17 @@ import { Role } from 'src/common/enums/role.enum';
 import { AuthGuard } from 'src/common/guards/auth.guard';
 import { Pagination } from 'src/common/decorators/pagination.decorator';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
+import { ApiConsumes, ApiTags } from '@nestjs/swagger';
+import { SwaggerConsumes } from 'src/common/enums/swagger-consumes.enum';
 
 @Controller('user')
+@ApiTags('user')
 @UseGuards(AuthGuard, RolesGuard)
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Post('profile')
+  @ApiConsumes(SwaggerConsumes.MultiPartData, SwaggerConsumes.Json, SwaggerConsumes.UrlEncoded)
   @UseInterceptors(FileInterceptor('image_profile'))
   async createProfile(
     @UploadedFile() file: Express.Multer.File,
@@ -35,6 +39,7 @@ export class UserController {
   }
 
   @Put('profile/update')
+  @ApiConsumes(SwaggerConsumes.MultiPartData, SwaggerConsumes.Json, SwaggerConsumes.UrlEncoded)
   @Roles(Role.USER, Role.ADMIN)
   @UseInterceptors(FileInterceptor('image_profile'))
   async updateProfile(
@@ -62,7 +67,8 @@ export class UserController {
     return this.userService.findUserById(id);
   }
 
-  @Put('users/update/:id')
+  @Put('users/update/:userId')
+  @ApiConsumes(SwaggerConsumes.Json, SwaggerConsumes.UrlEncoded)
   @Roles(Role.ADMIN)
   async updateUser(
     @Param('id', ParseIntPipe) id: number,
@@ -72,6 +78,7 @@ export class UserController {
   }
 
 @Put('users/:id/role')
+@ApiConsumes(SwaggerConsumes.Json, SwaggerConsumes.UrlEncoded)
 @Roles(Role.ADMIN)
 async changeUserRole(
   @Param('id', ParseIntPipe) id: number,

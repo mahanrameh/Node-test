@@ -54,14 +54,6 @@ export class UserService {
         image_profile_name: imageName,
         user,
       });
-    } else {
-      profile.name = dto.name ?? profile.name;
-      profile.bio = dto.bio ?? profile.bio;
-      profile.gender = dto.gender ? (dto.gender as Gender) : profile.gender;
-      profile.birthday = dto.birthday ?? profile.birthday;
-      profile.image_profile = imageBuffer;
-      profile.image_profile_mime = imageMime;
-      profile.image_profile_name = imageName;
     }
 
     profile = await this.profileRepository.save(profile);
@@ -171,57 +163,61 @@ export class UserService {
     return this.userRepository.findOne({ where: { id } });
   }
   
-  async getUsers(params: PaginationDto & { search?: string; role?: string }) {
-    const { page, limit, skip } = paginationSolver({ page: params.page, limit: params.limit } as PaginationDto);
+async getUsers(params: PaginationDto & { search?: string; role?: string }) {
+  const { page, limit, skip } = paginationSolver({
+    page: params.page,
+    limit: params.limit,
+  });
 
-    const qb = this.userRepository.createQueryBuilder('user')
-      .leftJoinAndSelect('user.profile', 'profile');
+  const query = this.userRepository.createQueryBuilder('user')
+    .leftJoinAndSelect('user.profile', 'profile');
 
-    if (params.search) {
-      const term = `%${params.search.trim()}%`;
-      qb.andWhere(
-        '(user.username LIKE :term OR user.email LIKE :term OR user.phone LIKE :term OR profile.name LIKE :term)',
-        { term },
-      );
-    }
-
-    if (params.role) {
-      qb.andWhere('user.role = :role', { role: params.role });
-    }
-
-    qb.orderBy('user.id', 'DESC')
-      .skip(skip)
-      .take(limit || 10);
-
-    const [items, total] = await qb.getManyAndCount();
-
-    const data = items.map(u => ({
-      id: u.id,
-      username: u.username,
-      email: u.email,
-      phone: u.phone,
-      role: u.role,
-      created_at: (u as any).created_at ?? null,
-      updated_at: (u as any).updated_at ?? null,
-      profile: u.profile ? {
-        id: u.profile.id,
-        name: u.profile.name,
-        bio: u.profile.bio,
-        gender: u.profile.gender,
-        birthday: u.profile.birthday,
-        image: u.profile.image_profile_name ? {
-          id: u.profile.id,
-          name: u.profile.image_profile_name,
-          mime: u.profile.image_profile_mime,
-        } : null,
-      } : null,
-    }));
-
-    return {
-      meta: paginationGenerator(total, page, limit || 10),
-      data,
-    };
+  if (params.search) {
+    const term = `%${params.search.trim()}%`;
+    query.andWhere(
+      '(user.username LIKE :term OR user.email LIKE :term OR user.phone LIKE :term OR profile.name LIKE :term)',
+      { term }
+    );
   }
+
+  if (params.role) {
+    query.andWhere('user.role = :role', { role: params.role });
+  }
+
+  query.orderBy('user.id', 'DESC')
+    .skip(skip)
+    .take(limit || 10);
+
+  const [users, total] = await query.getManyAndCount();
+
+  const result = users.map(user => ({
+    id: user.id,
+    username: user.username,
+    email: user.email,
+    phone: user.phone,
+    role: user.role,
+    created_at: (user as any).created_at ?? null,
+    updated_at: (user as any).updated_at ?? null,
+    profile: user.profile ? {
+      id: user.profile.id,
+      name: user.profile.name,
+      bio: user.profile.bio,
+      gender: user.profile.gender,
+      birthday: user.profile.birthday,
+      image: user.profile.image_profile_name ? {
+        id: user.profile.id,
+        name: user.profile.image_profile_name,
+        mime: user.profile.image_profile_mime,
+      } : null,
+    } : null,
+  }));
+
+  return {
+    meta: paginationGenerator(total, page, limit || 10),
+    data: result,
+  };
+}
+
 
   async findUserById(id: number) {
     const user = await this.userRepository.findOne({
@@ -253,8 +249,8 @@ export class UserService {
     };
   }
 
-  async UpdateUser(targetUserId: number, dto: UpdateUserDto) {
-    const user = await this.userRepository.findOne({ where: { id: targetUserId }, relations: ['profile'] });
+  async UpdateUser(userId: number, dto: UpdateUserDto) {
+    const user = await this.userRepository.findOne({ where: { id: userId }, relations: ['profile'] });
     if (!user) throw new NotFoundException('User not found');
 
     if (dto.email && dto.email !== user.email) {
@@ -277,10 +273,6 @@ export class UserService {
     }
 
 
-    if (dto.role && dto.role !== user.role) {
-      user.role = dto.role;
-    }
-
     await this.userRepository.save(user);
 
     return {
@@ -297,11 +289,11 @@ export class UserService {
     };
   }
 
-  async changeUserRole(targetUserId: number, newRole: Role, performedById?: number) {
-    const user = await this.userRepository.findOne({ where: { id: targetUserId } });
+  async changeUserRole(id: number, newRole: Role, performedById?: number) {
+    const user = await this.userRepository.findOne({ where: { id: id } });
     if (!user) throw new NotFoundException('User not found');
 
-    if (performedById && performedById === targetUserId) {
+    if (performedById && performedById === id) {
       throw new ForbiddenException('Admin cannot change their own role');
     }
 
@@ -319,17 +311,17 @@ export class UserService {
     };
   }
 
-  async removeUser(targetUserId: number, performedById?: number) {
-    if (performedById && performedById === targetUserId) {
+  async removeUser(id: number, performedById?: number) {
+    if (performedById && performedById === id) {
       throw new ForbiddenException('Admin cannot remove their own account');
     }
 
-    const user = await this.userRepository.findOne({ where: { id: targetUserId } });
+    const user = await this.userRepository.findOne({ where: { id: id } });
     if (!user) throw new NotFoundException('User not found');
 
-    await this.userRepository.delete(targetUserId);
+    await this.userRepository.delete(id);
 
-    return { id: targetUserId, removed: true };
+    return { id: id, removed: true };
   }
 }
 

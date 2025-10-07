@@ -8,31 +8,31 @@ import { SwaggerConsumes } from 'src/common/enums/swagger-consumes.enum';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
 import { Pagination } from 'src/common/decorators/pagination.decorator';
 import { UpdateTaskDto } from './dto/update-task.dto';
-import { CurrentUser } from 'src/common/decorators/user.decorator'; // ✅ your custom decorator
+import { CurrentUser } from 'src/common/decorators/user.decorator'; 
 
 @Controller('Task')
 @ApiTags('Task')
 export class TaskController {
   constructor(private readonly TaskService: TaskService) {}
 
-  @Post()
+  @Post('task/create')
   @ApiConsumes(SwaggerConsumes.UrlEncoded, SwaggerConsumes.Json)
   create(@Body() createTaskDto: CreateTaskDto, @CurrentUser() user: any) {
     return this.TaskService.create({ ...createTaskDto, userId: user.id });
   }
 
-  @Get()
+  @Get('tasks')
   @Pagination()
   findAll(@Query() paginationDto: PaginationDto) {
     return this.TaskService.findAll(paginationDto);
   }
 
-  @Get(':id')
+  @Get('task/:id')
   findOne(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: any) {
     return this.TaskService.findOne(id, user.id);
   }
 
-  @Patch(':id')
+  @Patch('update/task/:id')
   @ApiConsumes(SwaggerConsumes.UrlEncoded, SwaggerConsumes.Json)
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -42,7 +42,7 @@ export class TaskController {
     return this.TaskService.update(id, updateTaskDto, user.id);
   }
 
-  @Delete(':id')
+  @Delete('remove/task:id')
   remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: any) {
     return this.TaskService.remove(id, user.id);
   }
